@@ -26,7 +26,7 @@ const login = async () => {
 	
 	await page.goto(URL, { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector("body nav a:last-child", { visible: true })
-	await page.click("body nav a:last-child")
+	await page.click('body nav a[href="/login"]')
 	
 	await page.waitForSelector("input#email", { visible: true })
 	await page.type("input#email", auth.email)
@@ -40,9 +40,8 @@ const login = async () => {
 	await page.waitForNavigation();
 	const dashboard_url = page.url();
 	
+	// PART 2, scrap accounts
 	await page.waitForSelector("main > section > section", { visible: true })
-	
-	// PART 2
 	const accounts = await page.$$eval("main > section > section", (sections) => {
 		const data = [];
 		
@@ -68,8 +67,8 @@ const login = async () => {
 		return data;
 	});
 	
+	// PART 3, scrap transactions
 	let transactions = [];
-	// PART 3
 	for (const account of accounts) {
 		console.log(`Navigating============${account.href}`)
 		
@@ -108,6 +107,10 @@ const login = async () => {
 		await page.goBack();
 		await page.waitForSelector("main > section > section", { visible: true })
 	}
+	
+	// PART4 Logout
+	await page.click("body nav div a:last-child");
+	await page.waitForSelector('body nav a[href="/login"]', { visible: true })
 	
 	await browser.close();
 	return { dashboard_url, accounts, transactions };
