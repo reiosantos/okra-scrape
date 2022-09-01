@@ -38,12 +38,37 @@ const login = async () => {
 	await page.type("input#otp", auth.otp)
 	await page.click('button[type="submit"]')
 	await page.waitForNavigation();
-	
 	const dashboard_url = page.url();
 	
-	await browser.close();
+	await page.waitForSelector("main > section > section", { visible: true })
 	
-	return { dashboard_url };
+	// PART 2
+	const accounts = await page.$$eval("main > section > section", (sections) => {
+		const data = [];
+		
+		sections.forEach(section => {
+			const accountName = section.querySelector('h3:first-of-type').innerHTML;
+			const amount = section.querySelector('p:first-of-type').innerHTML;
+			const ledgerBalance = section.querySelector('p:last-of-type').innerHTML;
+			
+			const viewAccount = section.querySelector('a:last-of-type');
+			const href = viewAccount.getAttribute("href")
+			const accountId = href.split("-")[1];
+			
+			data.push({
+				accountName,
+				amount,
+				ledgerBalance,
+				accountId,
+				href
+			});
+		});
+		
+		return data;
+	});
+	
+	await browser.close();
+	return { dashboard_url, accounts };
 }
 
 login().then(console.log).catch(console.error);
