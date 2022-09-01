@@ -57,8 +57,9 @@ const login = async () => {
 			
 			data.push({
 				accountName,
-				amount,
-				ledgerBalance,
+				account_balance: amount.split(" ")[1].trim(),
+				currency: amount.split(" ")[0].trim(),
+				ledgerBalance: ledgerBalance.split(" ")[1].trim(),
 				accountId,
 				href
 			});
@@ -67,8 +68,49 @@ const login = async () => {
 		return data;
 	});
 	
+	let transactions = [];
+	// PART 3
+	for (const account of accounts) {
+		console.log(`Navigating============${account.href}`)
+		
+		await page.click(`a[href="${account.href}"]`);
+		await page.waitForSelector("main > section > div > table", { visible: true })
+		
+		transactions = await page.evaluate( (account) => {
+			const tables = document.querySelector("main > section > div > table:first-of-type")
+			
+			// Prepare headers in that order as object attributes
+			const headers = [];
+			tables.querySelectorAll("thead > tr > th").forEach(th => {
+				const n = th.innerHTML.trim().replaceAll(" ", "_").toLowerCase()
+				if (n) {
+					headers.push(n);
+				}
+			});
+			
+			// Get td attributes and assign values in the order of the headers
+			const data = [];
+			tables.querySelectorAll("tbody > tr").forEach(tr => {
+				const tmp = {};
+				tr.querySelectorAll("th, td").forEach((n, idx) => {
+					tmp[headers[idx]] = n.innerHTML.trim();
+				});
+
+				if (Object.keys(tmp).length !== 0) {
+					tmp.account_id = account.accountId
+					data.push(tmp);
+				}
+			});
+			
+			return data;
+		}, account);
+		
+		await page.goBack();
+		await page.waitForSelector("main > section > section", { visible: true })
+	}
+	
 	await browser.close();
-	return { dashboard_url, accounts };
+	return { dashboard_url, accounts, transactions };
 }
 
 login().then(console.log).catch(console.error);
