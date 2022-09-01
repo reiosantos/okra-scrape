@@ -9,7 +9,7 @@ const auth = {
 	otp: '12345'
 };
 
-const login = async () => {
+const scrape_organization = async (organization_url) => {
 	const browser = await puppeteer.launch({headless: true, userDataDir: USER_DATA_DIR});
 	
 	const page = await browser.newPage();
@@ -24,7 +24,7 @@ const login = async () => {
 		console.log('PAGE LOG:', msg.text());
 	});
 	
-	await page.goto(URL, {waitUntil: 'domcontentloaded'});
+	await page.goto(organization_url, {waitUntil: 'domcontentloaded'});
 	await page.waitForSelector('body nav a:last-child', {visible: true});
 	await page.click('body nav a[href="/login"]');
 	
@@ -38,7 +38,8 @@ const login = async () => {
 	await page.type('input#otp', auth.otp);
 	await page.click('button[type="submit"]');
 	await page.waitForNavigation();
-	const dashboard_url = page.url();
+	const url = page.url();
+	const name = await page.title();
 	
 	
 	// PART 2 scrap customer information
@@ -132,9 +133,9 @@ const login = async () => {
 	await page.waitForSelector('body nav a[href="/login"]', {visible: true});
 	
 	await browser.close();
-	return {dashboard_url, customer, accounts, transactions, auth};
+	return { organization: { name, url }, customer, accounts, transactions, auth};
 };
 
-login().then(console.log).catch(console.error);
+scrape_organization(URL).then(console.log).catch(console.error);
 
-module.exports = {login};
+module.exports = {scrape_organization};
