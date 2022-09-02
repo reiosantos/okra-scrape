@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
+// const {config} = require('../config');
 
 const USER_DATA_DIR = './user_data';
-const URL = 'https://bankof.okra.ng';
 
 const auth = {
 	email: 'ronireiosantos@gmail.com',
@@ -52,14 +52,14 @@ const scrape_organization = async (organization_url) => {
 			data[name] = p.lastChild.textContent.trim();
 		});
 		return {
-			names: div.firstChild.textContent.split('Welcome back')[1].slice(0, -1),
+			name: div.firstChild.textContent.split('Welcome back')[1].slice(0, -1),
 			...data
 		};
 	});
 	
 	// PART 3, scrap accounts
 	await page.waitForSelector('main > section > section', {visible: true});
-	const accounts = await page.evaluate(customer => {
+	customer.accounts = await page.evaluate(customer => {
 		const data = [];
 		
 		const sections = document.querySelectorAll('main > section > section');
@@ -73,7 +73,7 @@ const scrape_organization = async (organization_url) => {
 			const accountId = href.split('-')[1];
 			
 			data.push({
-				customer: customer.bvn,
+				customer_bvn: customer.bvn,
 				accountName,
 				account_balance: amount.split(' ')[1].trim(),
 				currency: amount.split(' ')[0].trim(),
@@ -87,14 +87,13 @@ const scrape_organization = async (organization_url) => {
 	}, customer);
 	
 	// PART 4, scrap transactions
-	let transactions = [];
-	for (const account of accounts) {
+	for (const account of customer.accounts) {
 		console.log(`Navigating============${account.href}`);
 		
 		await page.click(`a[href="${account.href}"]`);
 		await page.waitForSelector('main > section > div > table', {visible: true});
 		
-		transactions = await page.evaluate((account, customer) => {
+		account.transactions = await page.evaluate((account, customer) => {
 			const tables = document.querySelector('main > section > div > table:first-of-type');
 			
 			// Prepare headers in that order as object attributes
@@ -133,9 +132,9 @@ const scrape_organization = async (organization_url) => {
 	await page.waitForSelector('body nav a[href="/login"]', {visible: true});
 	
 	await browser.close();
-	return { organization: { name, url }, customer, accounts, transactions, auth};
+	return { organization: { name, url }, customer, auth};
 };
 
-scrape_organization(URL).then(console.log).catch(console.error);
+// scrape_organization(config.SCRAPE_URL).then(console.log).catch(console.error);
 
 module.exports = {scrape_organization};
