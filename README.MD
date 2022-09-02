@@ -1,5 +1,9 @@
 # Okra Scrape Pages
 
+## Requirements:
+- Nodejs >=18.3
+- docker and compose  --> Only if you are to use the dockerized mongo instance
+
 ## Install packages
 ```shell
 $ npm install

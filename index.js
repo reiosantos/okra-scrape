@@ -38,7 +38,7 @@ app.get("/", async (req, res) => {
 			const transactions = account.transactions;
 			delete account.transactions;
 			
-			const acc = await Account.findOneAndUpdate({accountId: account.accountId}, account, { upsert: true }).exec();
+			const acc = await Account.findOneAndUpdate({accountId: account.accountId}, account, { upsert: true, new: true }).exec();
 			const trans = transactions.map(tr => ({...tr, customer: customerUpdated.id, account: acc.id}));
 			await Transaction.insertMany(trans);
 			// Create all transactions for this account
